@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:c="http://xmlns.jcp.org/jsp/jstl/core"
+      xmlns:h="http://xmlns.jcp.org/jsf/html">
+
+    <body>
+
+        <ui:composition template="./template.xhtml">
+
+            <ui:define name="top">
+                <p align="center">Overzicht</p>
+            </ui:define>
+
+            <ui:define name="content">
+                <h:form>
+                <c:if test="${info.aantal == 0}">
+                    <p>Geen zoekresultaten!!</p>
+                </c:if>
+                <c:if test="${info.aantal > 0}">   
+                <table>
+                    <thead>
+                        <th>Adres</th>
+                        <th>Prijs</th>
+                        <th>Status</th>
+                    </thead>
+                    <c:forEach items="#{info.panden}" var="pand">
+                        <tr>
+                            <td>
+                                #{pand.straat} #{pand.nummer}, #{pand.gemeente.postcode} #{pand.gemeente.naam}
+                            </td>
+                            <td>
+                                &euro;#{pand.vraagPrijs}
+                            </td>
+                            <td>
+                                #{pand.status}
+                            </td>
+                        </tr>
+                    </c:forEach>
+                </table>
+                </c:if>
+                <h:commandButton action="Zoekpagina.xhtml" value="back"/>
+                </h:form>
+            </ui:define>
+
+        </ui:composition>
+
+    </body>
+</html>

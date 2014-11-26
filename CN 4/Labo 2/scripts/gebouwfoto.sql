@@ -1,0 +1,11 @@
+insert into gebouwFoto (pandid,fotoid) values (1,1);
+insert into gebouwFoto (pandid,fotoid) values (2,2);
+insert into gebouwFoto (pandid,fotoid) values (3,3);
+insert into gebouwFoto (pandid,fotoid) values (4,4);
+insert into gebouwFoto (pandid,fotoid) values (1,5);
+insert into gebouwFoto (pandid,fotoid) values (2,6);
+insert into gebouwFoto (pandid,fotoid) values (3,7);
+insert into gebouwFoto (pandid,fotoid) values (4,8);
+insert into gebouwFoto (pandid,fotoid) values (1,9);
+insert into gebouwFoto (pandid,fotoid) values (2,10);
+insert into gebouwFoto (pandid,fotoid) values (2,11);

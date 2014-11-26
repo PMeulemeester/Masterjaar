@@ -1,0 +1,11 @@
+insert into foto (link) values ("foto1.jpg");
+insert into foto (link) values ("foto2.jpg");
+insert into foto (link) values ("foto3.jpg");
+insert into foto (link) values ("foto4.jpg");
+insert into foto (link) values ("foto5.jpg");
+insert into foto (link) values ("foto6.jpg");
+insert into foto (link) values ("foto7.jpg");
+insert into foto (link) values ("foto8.jpg");
+insert into foto (link) values ("foto9.jpg");
+insert into foto (link) values ("foto10.jpg");
+insert into foto (link) values ("foto11.jpg");

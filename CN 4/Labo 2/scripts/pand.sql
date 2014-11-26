@@ -1,0 +1,4 @@
+insert into pand (aantalslaapkamers,tuin,straat,nummer,gemeenteId,terras,aantalbadkamers,bewoonbareruimte,prijs,verwarmingsId,status,gebouwId,verkopersId) values (1,true,"Lossestraat",15,4,false,1,105.2,"150000",1,"Te Koop",2,4);
+insert into pand (aantalslaapkamers,tuin,straat,nummer,gemeenteId,terras,aantalbadkamers,bewoonbareruimte,prijs,verwarmingsId,status,gebouwId,verkopersId) values (5,false,"Veldstraat",100,2,true,1,604.52,"254000",2,"Te huur",1,3);
+insert into pand (aantalslaapkamers,tuin,straat,nummer,gemeenteId,terras,aantalbadkamers,bewoonbareruimte,prijs,verwarmingsId,status,gebouwId,verkopersId) values (3,false,"Kattestraat",10,3,true,2,95.32,"450100",3,"Verkocht",2,2);
+insert into pand (aantalslaapkamers,tuin,straat,nummer,gemeenteId,terras,aantalbadkamers,bewoonbareruimte,prijs,verwarmingsId,status,gebouwId,verkopersId) values (4,true,"Boudewijnlaan",54,1,true,1,250.25,"654000",3,"Te koop",3,1);

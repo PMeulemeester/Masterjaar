@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	elementFormDefault="qualified"
+	attributeFormDefault="unqualified">
+    <xs:element name="query">
+        <xs:complexType >
+            <xs:attribute name="isbn" type="xs:NMTOKEN"/>
+            <xs:attribute name="zipcode" type="zips"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:simpleType name="zips">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="75230"/>
+            <xs:pattern value="75233"/>
+            <xs:pattern value="75235"/>
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>
+
