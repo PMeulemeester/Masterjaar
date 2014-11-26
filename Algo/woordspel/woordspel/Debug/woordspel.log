@@ -1,0 +1,35 @@
+﻿Build started 28/10/2014 21:11:27.
+Project "E:\algo_pieter\woordspel\woordspel\woordspel.vcxproj" on node 2 (Build target(s)).
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _LIB /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt woordspel.cpp
+  woordspel.cpp
+e:\algo_pieter\woordspel\woordspel\graaf.h(188): warning C4018: '<' : signed/unsigned mismatch
+          e:\algo_pieter\woordspel\woordspel\graaf.h(184) : while compiling class template member function 'void Graaf<GERICHT>::samenhangZoeken(void)'
+          e:\algo_pieter\woordspel\woordspel\woordspel.cpp(30) : see reference to function template instantiation 'void Graaf<GERICHT>::samenhangZoeken(void)' being compiled
+          e:\algo_pieter\woordspel\woordspel\woordspel.cpp(11) : see reference to class template instantiation 'Graaf<GERICHT>' being compiled
+e:\algo_pieter\woordspel\woordspel\graaf.h(202): warning C4018: '<' : signed/unsigned mismatch
+          e:\algo_pieter\woordspel\woordspel\graaf.h(200) : while compiling class template member function 'Graaf<GERICHT> Graaf<GERICHT>::keerOm(void)'
+          e:\algo_pieter\woordspel\woordspel\graaf.h(185) : see reference to function template instantiation 'Graaf<GERICHT> Graaf<GERICHT>::keerOm(void)' being compiled
+          e:\algo_pieter\woordspel\woordspel\graaf.h(231) : while compiling class template member function 'Graaf<GERICHT>::Graaf(int)'
+          e:\algo_pieter\woordspel\woordspel\woordspel.cpp(11) : see reference to function template instantiation 'Graaf<GERICHT>::Graaf(int)' being compiled
+e:\algo_pieter\woordspel\woordspel\graaf.h(205): warning C4018: '<' : signed/unsigned mismatch
+e:\algo_pieter\woordspel\woordspel\graaf.h(157): warning C4018: '<' : signed/unsigned mismatch
+          e:\algo_pieter\woordspel\woordspel\graaf.h(155) : while compiling class template member function 'std::vector<int,std::allocator<_Ty>> Graaf<GERICHT>::postOrder(void)'
+          with
+          [
+              _Ty=int
+          ]
+          e:\algo_pieter\woordspel\woordspel\graaf.h(186) : see reference to function template instantiation 'std::vector<int,std::allocator<_Ty>> Graaf<GERICHT>::postOrder(void)' being compiled
+          with
+          [
+              _Ty=int
+          ]
+e:\algo_pieter\woordspel\woordspel\graaf.h(161): warning C4018: '<' : signed/unsigned mismatch
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"E:\algo_pieter\woordspel\Debug\woordspel.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"E:\algo_pieter\woordspel\Debug\woordspel.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"E:\algo_pieter\woordspel\Debug\woordspel.lib" /MACHINE:X86 Debug\woordspel.obj
+  woordspel.vcxproj -> E:\algo_pieter\woordspel\Debug\woordspel.exe
+Done Building Project "E:\algo_pieter\woordspel\woordspel\woordspel.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:02.56
