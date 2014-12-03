@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>TODO supply a title</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+        <script src="js/jcanvas.js"></script>
+        <script src="js/test.js"></script>
+        <link href="css/style.css" rel='stylesheet' type="text/css">
+    </head>
+    <body style="margin: 0;">
+        <button id='clr'>clear</button>
+        <canvas id="canv">
+            sorry
+        </canvas>
+        <script>
+            var c=document.getElementById("canv");
+            var ctx=c.getContext("2d");
+            ctx.beginPath();
+            ctx.arc(100,100,10,0,2*Math.PI);
+            ctx.stroke();
+        </script>
+    </body>
+</html>
