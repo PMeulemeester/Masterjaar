@@ -1,0 +1,27 @@
+Elias De Coninck & Tim Dheedene
+vpn2
+
+5. groep en user creeren op ising:
+groupadd -g 5000 sshvpn
+useradd -m -d /opt/ssh-vpn -g 5000 sshvpn
+
+6.
+de volgende bestanden aanpassen
+in sshd_config bestand:
+RhostsRSAAuthentication yes
+
+in /etc/hosts.equiv:
+groep13.iii.hogent.be
+
+ssh service starten
+
+wat betreft de rest van het labo: 
+ 
+    ____
+ (( ____ \-^ChTrSrFr
+ (( _____
+ ((_____ 
+ ((____   ----
+      /  /
+     (_(( 
+          

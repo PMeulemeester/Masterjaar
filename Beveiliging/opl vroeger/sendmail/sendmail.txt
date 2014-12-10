@@ -1,0 +1,341 @@
+Elias De Coninck & Tim Dheedene
+Sendmail verslag - beveiliging
+
+1. Pas de configuratiebestanden van sendmail aan zodat deze
+nog enkel de hoogstnodige minimale instellingen bevatten.
+Ga na of je nu met deze basisconfiguratie via jouw mail-
+server een mail kan versturen naar een lokale gebruiker. 
+Controleer ook of je een mail kan versturen naar een lokale
+gebruiker van het andere domein. Een e-mail versturen kan 
+je m.b.v. het commando mail -v .
+===========================================================
+basisconfiguratie van sendmail:
+voorbeeldconfiguratie van pdf bestand overnemen
+in /etc/mail/sendmail.mc
+
+Deze configuratie houdt in:
+include(`/usr/share/sendmail-cf/m4/cf.m4') 
+OSTYPE(`linux') 
+define(`confMAX_HOP',`25')
+define(`confSMTP_LOGIN_MSG',`$j mailer ready at $b') 
+define(`confMIME_FORMAT_ERRORS',`False') 
+FEATURE(`promiscuous_relay') 
+FEATURE(`accept_unqualified_senders') 
+FEATURE(`use_cw_file') 
+MASQUERADE_AS(dom1.edu) 
+MAILER(smtp) 
+
+Dit bestand dan omzetten in het sendmail.cf bestand met:
+/etc/mail/make commando
+of het volgende commando:
+m4 /etc/mail/sendmail.mc > /etc/mail/sendmail.cf
+
+mail verzenden:
+als bvb root:
+mail -v tiwi1@groep14.iii.hogent.be
+-> vraagt het onderwerp
+-> vraagt het bericht
+(bericht eindigen met ctrl+d of een punt op een lijn)
+de e-mail zal dan verzonden worden naar 
+tiwi1@groep14.iii.hogent.be
+
+deze mail ontvangen:
+als tiwi1:
+mail -u tiwi1
+-> we zien dat de mail is ontvangen
+--> test geslaagd
+
+Probleem tijdens deze opgave: 
+mails werden verzonden, maar niet ontvangen
+oplossing: parameter -u gebruiken, we gebruikten gewoon
+het commando mail, maar dit is om mail te ontvangen.
+
+3. Alle post die bestemd is voor gebruiker root dient te 
+worden bezorgd aan gebruiker tiwi3.
+tiwi1 is een alias voor 
+jouwvoornaam.jouwnaam@jouwdomein.iii.hogent.be.
+tiwi2 is net zoals tiwi1 een alias maar dan voor je 
+collega. Welke bestanden heb je aangepast en welke 
+informatie heb je aan die bestanden toegevoegd? Probeer dit
+eerst vanuit het lokale domein en nadien vanuit een ander 
+domein.
+===========================================================
+aliases aanmaken: de volgende regels in het bestand 
+/etc/aliases plaatsen
+root: 		  	 tiwi3
+tim.dheedene:	 tiwi1 		
+elias.deconinck: tiwi2
+
+Vervolgens het commando 'newaliases' uitvoeren om deze
+intellingen door te voeren.
+
+probleem: de opgave lukte eerst niet
+oorzaak: de volgorde van de aliassen van tiwi1/2 waren niet
+in de goede volgorde (regels hieronder zijn dus fout!!):
+tiwi1 : tim.dheedene
+tiwi2 : elias.deconinck
+
+4. Maak een mailing list aan met de naam domeinbeheerders-
+@jouwdomein.iii.hogent.be. Alle post die naar dit adres 
+wordt verstuurd, wordt doorgestuurd naar jouw e-mailadres, 
+in de vorm voornaam.naam@jouwdomein.iii.hogent.be, en naar 
+het mailadres van je collega. Bovendien dienen deze 
+berichten te worden gearchiveerd in het bestand 
+/var/domeinbeheer.
+===========================================================
+de volgende regel in het configuratiebestand 
+/etc/mail/sendmail.mc toevoegen
+define(`ALIAS_FILE',`/etc/aliases, /etc/aliases_mail1')
+
+Vervolgens in /etc/aliases_mail1 de alias aanmaken:
+domeinbeheerders: tim.dheedene, elias.deconcink
+
+De service herstarten: service sendmail restart
+
+mail sturen naar domeinbeheerders:
+mail -v domeinbeheerders@groep14.iii.hogent.be
+mail bekijken bij tiwi1 en tiwi2
+-> mail is ontvangen -> test geslaagd
+
+of aliases aanmaken in /etc/aliases:
+domeinbeheerders: tim.dheedene, elias.deconcink
+en hierna terug 'newaliases' gebruiken om deze instellingen
+door te voeren.
+
+archiveren:
+de alias vervolledigen:
+domeinbeheerders: 
+tim.dheedene,elias.deconinck,support-archive
+support-archive: /var/domeinbeheer
+
+Het bestand aanmaken:
+nano /var/domeinbeheer --> opslaan op deze locatie
+commando newaliases gebruiken om de aliassen op te slaan
+
+5.Zorg er voor dat wanneer je een reply doet op een mail 
+met een ontvangstadres van de vorm voornaam.naam@jouw-
+domein.iii.hogent.be, deze mail verstuurd wordt met als 
+afzender voornaam.naam@jouwdomein.iii.hogent.be en niet 
+als tiwi1@jouwdomein.iii.hogent.be.
+===========================================================
+De configuratie van sendmail in het bestand /etc/mail/
+sendmail.mc aanvullen met de volgende regels:
+FEATURE(`genericstable')
+FEATURE(`generics_entire_domain')
+GENERICS_DOMAIN(`groep14.iii.hogent.be')
+
+En terug het make commando gebruiken om het snedmail.cf
+bestand aan te maken.
+
+Commando om het bestand genericstable om te zetten van een
+tekstbestand in een hash database:
+makemap hash genericstable.db < genericstable
+
+probleem:
+fout in de configuratie door fout in de handleiding:
+GENERICS_DOMAIN(`groep14.iii.hogent.be') bevatte eerst geen
+'S', waardoor deze vraag eerst mislukte.
+
+6. Maak gebruik van een grafische e-mailclient op de 
+routing-computer, zoals bijvoorbeeld thunderbird.
+Haal jouw persoonlijke berichten af via POP3 van de mail-
+server en beantwoord een ontvangen bericht. Kijk na of 
+alles correct werkt.
+Opgelet: pas indien nodig de configuratie van dovecot aan.
+Wat gebeurt er als je op de routing-computer i.p.v. 
+thunderbird het consoleprogramma mail gebruikt?
+===========================================================
+commando om thunderbird te installeren:
+yum install thunderbird
+
+commando om dovecot te installeren:
+yum install dovecot
+
+commando om dovecot te starten:
+/etc/init.d/dovecot start
+
+Ervoor zorgen dat Dovecot automatisch opstart:
+chkconfig dovecot on
+
+thunderbird openen.
+
+Een account aanmaken in thunderbird:
+naam: tim dheedene
+emailadres: correct adres ingeven
+paswoord (e=mc**2)
+incoming = pop3
+username = tim.dheedene
+
+klik op retest-> configuratie wordt aangepast 
+(poorten, ssl info)
+
+commando om de poorten te testen:
+nmap -p 25,110,143,993,995 localhost
+
+account bevestigen: 
+ - op 'create account' klikken
+ - nog geen certificaat aanwezig:confirm security exception
+
+probleem: werkt niet
+oplossing: docevot configureren.
+
+om dovecot te configureren:
+/etc/dovecot/dovecot.conf aanpassen:
+disable_plaintext_auth = no
+mail_privileged_group = mail
+mail_location = mbox:~/mail:INBOX=/var/mail/%u
+mail_access_groups = mail
+
+thunderbird op ising installeren, daar dan de bijhorende 
+configuratie doen, dovecot blijft op de server staan
+
+op ising: de mails zijn zichtbaar in de inbox 
+-> test geslaagd
+
+mails naar elkaar sturen: lukt-> test geslaagd
+
+hulpmiddel telnet:
+telnet localhost pop3
+USER tiwi1 -> gebruikersnaam ingeven
+PASS e=mc**2 -> inloggen
+LIST -> geeft de mails
+
+7. Alle berichten die verstuurd worden naar de bestemming 
+tiwi4@jouwdomein.iii.hogent.be moeten aan tiwi4@jouw-
+naburigdomein.iii.hogent.be worden bezorgd.
+Stel in op 2 verschillende manieren en test telkens uit.
+===========================================================
+eerste manier:
+virtualuser gebruiken:
+configuratiebestand sendmail /etc/mail/sendmail.mc vervol-
+ledigen met volgende regel:
+FEATURE(`virtusertable')
+
+/etc/mail/local-host-names aanpassen indien nodig
+-> was al gedaan voor een vorige oefening.
+
+/etc/mail/virtusertable vervolledigen met volgende regel:
+tiwi4@groep14.iii.hogent.be tiwi4@groep13.iii.hogent.be
+
+commando om om de hash op te maken
+makemap hash virtusertable.db < virtusertable
+
+service herstarten:
+sevrice sendmail restart
+test: een mail versturen naar tiwi4@groep14.iii.hogent.be
+-> komt toe bij onze medestudenten van groep13
+
+manier 2
+---------
+werken met aliases:
+/etc/aliases aanpassen:
+tiwi4: tiwi4@groep30.iii.hogent.be
+
+Vervolgens het commando 'newaliases' om de aliassen door
+te voeren.
+
+Het vervolg van deze manier is hetzelfde als de eerste 
+manier.
+
+8. Voor deze vraag gebruik je telnet of nc om een connectie
+te leggen met de mailserver van een ander domein. Verzend 
+op deze manier een bericht met als afzender een gebruiker 
+van een willekeurig domein en als bestemmeling een 
+gebruiker van jouw domein. Welke instellingen zijn hier van
+belang. Zorg er nadien voor dat dit niet meer mogelijk is 
+en dat e-mail verzenden als een gebruiker van een 
+onbestaand domein niet meer mogelijk is. Test dit grondig 
+uit.
+===========================================================
+gebruikte bron: http://www.yuki-onna.co.uk/email/smtp.html
+
+gebruikte commando's: 
+telnet computernaam poort
+-> een connectie openen van de computer naar de mailserver.
+
+HELO groep13.iii.hogent.be
+-> aanduiden vanop welke mailserver je het bericht wil 
+   verzenden
+    antwoord op console: 250 huygens.groep14.iii.hogent.be 
+	Hello `computernaam`, pleased to meet you
+
+MAIL FROM: tiwi2@groep13.iii.hogent.be     
+-> emailadres opgeven van verzender
+   antwoord: 250 2.1.0 tiwi2@groep13.iii.hogent.be... 
+   Sender ok
+
+RCPT TO: tiwi1@groep14.iii.hogent.be
+-> emailadres van de ontvanger opgeven
+   antwoord: 250 2.1.5 tiwi1@groep14.iii.hogent.be... 
+   Recipient ok
+
+DATA
+-> de inhoud van het bericht instellen
+
+
+voor een onbestaand domein:
+in het configuratiebestand van sendmail de volgende regel
+weglaten:
+FEATURE(`promiscuous_relay')
+
+vervolgens het commando /etc/mail/make gebruiken
+en de service herstarten:
+service sendmail restart
+
+-> testen: mail van een onbestaand domein laten versturen 
+lukt niet. -> test geslaagd
+
+9. Verander de configuratie van sendmail zodat nu ook alle 
+berichten die afkomstig zijn van het naburige domein tegen-
+gehouden worden. Mail die verstuurd wordt naar dit domein 
+moet evenwel doorgelaten worden.
+===========================================================
+/etc/mail/access aanpassen:
+localhost				OK
+groep13.iii.hogent.be			REJECT
+
+deze instellingen doorvoeren met het volgende commando:
+makemap hash /etc/mail/access.db < /etc/mail/access
+
+/etc/mail/sendmail.mc bestand vervolledigen met de regel:
+FEATURE(`access-db')
+
+terug het sendmail.cf genereren met het commando:
+m4 /etc/mail/sendmail.mc > /etc/mail/sendmail.cf
+
+
+10. Maak gebruik van spamassassin om spam-berichten te 
+onderscheiden van gewone berichten. Probeer dit uit door de
+meegeleverde berichten, sample-spam.txt en sample-
+nonspam.txt, naar lokale gebruikers te versturen.
+Zoek uit op welke manier je de hoofding van het bericht 
+kan aanpassen en test uit.
+===========================================================
+installatie spamassassin:
+yum install spamassassin
+
+spamassassin service starten:
+service spamassassin start
+
+spamass-milter installeren:
+yum install spamass-milter
+
+spamass-milter starten:
+/etc/init.d/spamass-milter start
+
+vervolledig het sendmail.mc configuratiebestand:
+INPUT_MAIL_FILTER(`spamassassin', 
+`S=local:/var/run/sendmail/spamass.sock,
+F=,T=C:15m;S:4m;R:4m;E:10m')
+
+(dit moet op 1 regel in het bestand)
+
+Terug het sendmail.cf bestand genereren:
+/etc/mail/sendmail.mc > /etc/mail/sendmail.cf
+
+De mailserver herstarten:
+service sendmail restart
+
+Wanneer we een mail sturen vanuit een ander domein naar 
+ons eigen domein met de inhoud van één van de bijgeleverde
+bestanden, wordt het bericht geïdentificeerd als spam.

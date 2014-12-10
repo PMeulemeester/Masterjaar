@@ -1,0 +1,343 @@
+Elias De Coninck & Tim Dheedene
+verslag iptables
+
+voorbereidend werk:
+- De iptables leegmaken met commando: iptables --flush
+- script aanmaken om alle regels hierin te plaatsen, en bij
+  elke vraag het script uit te voeren. Het script heeft als
+  naam 'iptables_script'.
+  -> het script begint met het 'iptables --flush' commando
+     om de lijst leeg te maken zodat de nieuwe configuratie
+	 kan toegepast worden.
+
+DEEL 1
+===========================================================
+1. Controleer of je een ftp-connectie kan leggen met je 
+machine. Stel regels op die er voor zorgen dat geen enkele 
+computer een ftp-verbinding kan maken met jouw machine.
+-----------------------------------------------------------
+- de service starten:
+  commando: service vsftpd start
+- een connectie leggen je machine:
+  commando: ftp localhost
+  -> vraagt een gebruikersnaam en wachtwoord
+  -> bij ingeven van logingegevens komt de boodschap '230
+     login successful' te voorschijn.
+  -> deze 'subshell' verlaten m.b.v. commando exit.
+--> Connectie maken lukt.
+--> op dezelfde manier een connectie maken met een andere
+    pc lukt ook.
+
+Nu zorgen we ervoor dat de connectie niet kan gemaakt 
+worden:
+vervolledig het script met de volgende regel:
+iptables -A INPUT -j DROP -p tcp --destination-port ftp
+
+Deze regel zorgt ervoor dat inkomende (INPUT) tcp (-p tcp)
+packets worden geweigerd (-j DROP) wanneer ze toekomen op 
+de poort die gebruikt wordt door de ftp service 
+(--destination-port ftp).
+
+De -A optie zorgt ervoor dat de regel achteraan de iptables 
+lijst wordt toegevoegd. -I zort ervoor dat de regel boven-
+aan wordt toegevoegd.
+
+we testen deze configuratie:
+- ftp localhost
+we krijgen de boodschap 'connection refused' te zien.
+
+we testen uit bij het verbinden met een ander systeem:
+-ftp computernaam
+we krijgen dezelfde boodschap te zien.
+--> test geslaagd
+
+2. Laat nadien selectief alleen ftp vanaf je eigen computer
+naar jezelf toe. Test zeer kritisch: gebruik zowel local-
+host,de naam, het ip-adres als de loopback van je machine.
+-----------------------------------------------------------
+vervolledig het script aan met de volgende regel, plaats 
+deze boven de regel van in de vorige vraag:
+iptables -A INPUT -s 127.0.0.1 -j ACCEPT -p tcp 
+--destination-port ftp --destination 127.0.0.1
+
+inkomende tcp packets (-p tcp) met als bronadres (-s) 
+127.0.0.1 en als doeladres (--destination) 127.0.0.1 op de
+ftp poort (--destination-port ftp) worden aanvaard
+(-j ACCEPT).
+
+
+3. Controleer of je een telnet-connectie kan leggen met je 
+machine. Indien dit niet het geval is, doe dan de nodige 
+aanpassingen aan de configuratie van xinetd. Wanneer telnet
+niet voorkomt in de /etc/xinetd.d/ directory, voer dan yum 
+install telnet-server uit. Zorg ook dat er op jouw computer
+een webserver draait. Stel nadien dezelfde twee regels in 
+(cfr. 1 en 2) voor de protocols www en telnet.
+-----------------------------------------------------------
+voorbereiding:
+webserver draaien: service httpd start
+xinetd starten: service xinetd start
+
+configuratie webserver:
+'LoadModule ssl_module modules/libmodssl.so' in commentaar
+plaatsen in het bestand /etc/httpd/conf/httpd.conf.
+html testpagina in /var/www/html/index.html
+surfen naar http://localhost -> we krijgen een webpagina te 
+zien
+vanop huygens naar: http://ising: terug een webpagina te 
+zien
+
+telnet 127.0.0.1 -> werkt
+
+
+configuratie xinedt:
+-zet 'disable' op 'no' in bestand /etc/xinetd.d/telnet
+-vul het iptables script aan met de volgende regels:
+iptables -A INPUT -j ACCEPT -s 127.0.0.1 -p tcp 
+--destination-port telnet --destination 127.0.0.1
+
+iptables -A INPUT -j ACCEPT -s 127.0.0.1 -p tcp 
+--destination-port http --destination 127.0.0.1
+
+iptables -A INPUT -j DROP -p tcp --destination-port telnet
+iptables -A INPUT -j DROP -p tcp --destination-port http
+
+telnet ising-> werkt niet (werd afgezet)
+bij afzetten: naar de site van gebuur gaan lukt ook niet
+
+naar site bij blokkeren: http://127.0.0.1 -> lukt niet meer
+
+telnet nr ising: lukt niet
+telnet nr localhost: lukt
+
+4. Maak nu gebruik van de optie multiport om al de vorige 
+regels te groeperen.
+-----------------------------------------------------------
+vervang in het iptables script de regels door de volgende
+regels:
+iptables -A INPUT -s 127.0.0.1 -j ACCEPT -p tcp -m 
+multiport --destination-ports telnet,ftp,http
+iptables -A INPUT -j DROP -p tcp -m multiport 
+--destination-ports telnet,ftp,http
+
+5. Ga voor het telnet-protocol na wat de effectverschillen 
+zijn tussen de opties DROP en REJECT bij het instellen van 
+de regels. Bij REJECT kan je ook zelf kiezen uit een aantal
+icmp-type 3 foutboodschappen. Test uit.
+-----------------------------------------------------------
+bij DROP worden de packets geweigerd. Er wordt geen melding
+weergegeven. Bij Reject wordt wel een foutboodschap getoond
+, de volgende configuratie zorgt hier bijvoorbeeld voor:
+
+iptables -A INPUT -j REJECT -p tcp --destination-port 
+telnet --reject-with icmp-host-unreachable
+
+Bij het maken van een telnet verbinding, zal de foutbood-
+schap 'host unreachable' te zien zijn.
+Wanneer de regel op 'DROP' is geconfigureerd, krijgen we 
+niets te zien.
+
+6. Stel in dat er vanop je computer geen enkele connectie 
+naar gonzo.iii.hogent.be kan gelegd worden. Zorg er wel 
+voor dat je vooraf test welke soorten verbindingen er wel 
+kunnen gemaakt worden.
+-----------------------------------------------------------
+We kijken hoe we met gonzo kunnen verbinden met het 
+commandp nmap gonzo.iii.hogent.be
+-> ssh blijkt mogelijk te zijn:
+verbinding maken: ssh gonzo.iii.hogent.be
+vul het script aan met de volgende regel:
+iptables -A OUTPUT -j REJECT --destination 
+gonzo.iii.hogent.be --reject-with icmp-host-unreachable
+
+Met deze regel lukt het verbinden niet meer.
+
+8. Zorg ervoor dat er op geen enkele poort boven 1024 
+informatie kan verstuurd worden naar moore.iii.hogent.be.
+Test bijvoorbeeld dat http wel werkt, maar dat de tomcat-
+server op poort 8080 niet te bereiken is.
+-----------------------------------------------------------
+nslookup moore.iii.hogent.be --> ip = 192.168.16.8
+
+iptables -I OUTPUT -j DROP --destination 192.168.16.8 
+-p tcp -m multiport --destination-ports 1024:65535
+
+iptables -I OUTPUT -j DROP --destination 192.168.16.8 
+-p udp -m multiport --destination-ports 1024:65535
+
+
+9. Maak dat je eigen machine niet kan gepingd worden. Dit 
+kan je verwezenlijken op verschillende manieren: langs in-
+gangszijde geen aanvragen toelaten, langs uitgangszijde 
+geen antwoord sturen. Probeer beide mogelijkheden uit.
+-----------------------------------------------------------
+ping berichten zijn ICMP berichten. de volgende regel zorgt 
+ervoor dat ontvangen ping/CIMP berichten geweigerd worden.
+iptables -A INPUT -p ICMP -d huygens.groep14.iii.hogent.be 
+-j DROP
+
+voorkomen dat antwoorden worden gestuurd:
+Het volgende is niet volledig correct omdat deze het ook 
+verbied om zelf ping requests uit te sturen. 
+iptables -A OUTPUT -p ICMP -s huygens.groep14.iii.hogent.be 
+-m state --state ESTABLISHED -j DROP
+
+
+DEEL 2
+===========================================================
+voorbereiding:
+we maken een ander script of maken het vorige leeg.
+dit script moet beginen met de volgende regels:
+iptables --flush
+iptables -P INPUT DROP
+iptables -P OUTPUT DROP
+iptables -P FORWARD DROP
+
+De laatste 4 oprachten zijn nodig omdat nu de default
+instelling 'DROP' is. 
+
+10. Zorg er in eerste instantie voor dat je eigen machine 
+in staat is om DNS-namen op te vragen. Controleer met ns-
+lookup (vb. www.google.be). Zorg er ook voor dat de 
+gateway-computer van je netwerk jouw DNS-server kan 
+bereiken.
+-----------------------------------------------------------
+In onze opstelling is huygens de dns server. met het 
+nslookup commando kunnen we adressen en namen opvragen van
+systemen.
+vul het script aan met de volgende regels.
+iptables -A OUTPUT -p tcp --dport domain -j ACCEPT
+iptables -A OUTPUT -p udp --dport domain -j ACCEPT
+iptables -A OUTPUT -p tcp --sport domain -j ACCEPT
+iptables -A OUTPUT -p udp --sport domain -j ACCEPT
+iptables -A INPUT -p udp --dport domain -j ACCEPT
+iptables -A INPUT -p tcp --dport domain -j ACCEPT
+iptables -A INPUT -p udp --sport domain -j ACCEPT
+iptables -A INPUT -p tcp --sport domain -j ACCEPT
+Deze opdrachten accepteren de tcp of udp packets die binnen
+of buiten komen langs de poort doe gebruikt wordt voor dns 
+(--dport domain).
+
+Op gateway extra forward regels (ising)
+iptables -I FORWARD -p tcp --dport domain -j ACCEPT
+iptables -I FORWARD -p tcp --sport domain -j ACCEPT
+
+we testen deze configuratie: met bvb de opdracht nslookup
+curie.groep13.iii.hogent.be
+-> het ip-adres van curie.groep13.iii.hogent.be wordt weer-
+gegeven.
+
+11. Natuurlijk moet je van op je eigen computer ook nog de 
+webpagina's van gonzo.iii.hogent.be kunnen opvragen.
+-----------------------------------------------------------
+iptables -A INPUT -s 192.168.16.17 -j ACCEPT -p tcp 
+--source-port http
+iptables -A OUTPUT -d 192.168.16.17 -j ACCEPT -p tcp 
+--destination-port http
+
+op gateway extra regels om http verkeer door te laten:
+iptables -I FORWARD -p tcp --dport http -j ACCEPT
+iptables -I FORWARD -p tcp --sport http -j ACCEPT
+
+Deze regels aanvaarden tcp packets die bij het systeem toe-
+komen of vertrekken langs de poort die gebruikt wordt voor
+http verkeer.
+
+we testen deze configuratie: we surfen naar 
+http://gonzo.iii.hogent.be -> we krijgen het bekende 
+intranet te zien.
+
+12. Stel nu een regel op die het mogelijk maakt om je eigen
+machine als webserver te gebruiken. Laat dit controleren 
+door een van je buren.
+-----------------------------------------------------------
+iptables -A OUTPUT -p tcp --dport http -j ACCEPT
+iptables -A INPUT -p tcp --sport http -j ACCEPT
+iptables -A OUTPUT -p tcp --sport http -j ACCEPT
+iptables -A INPUT -p tcp --dport http -j ACCEPT
+
+we testen de configuratie:
+vanop huygens surfen we naar http://ising -> we krijgen
+een webpagina te zien.
+vanop ising surfen we naar http://huygens -> ook hier 
+krijgen we een webpagina te zien.
+
+13. Stel nu regels op die het mogelijk maken om je eigen 
+machine als FTP-server te kunnen laten gebruiken: je compu-
+ter moet door een ftp-client bij je buur kunnen gebruikt 
+worden om er bestanden van op te halen en er op te 
+plaatsen; gebruik hiervoor een van de gewone tiwi.
+In welke mode moet het ftp-commando een connectie leggen 
+opdat de firewallinstellingen effect zouden hebben?
+Ga na of je effectief ook bestanden kan uitwisselen.
+-----------------------------------------------------------
+iptables -A INPUT -p tcp --dport ftp -m state --state NEW 
+-j ACCEPT
+iptables -A INPUT -p ALL -m state --state ESTABLISHED,
+RELATED -j ACCEPT
+iptables -A OUTPUT -p ALL -m state --state ESTABLISHED,
+RELATED -j ACCEPT
+
+we testen deze configuratie:
+met het commando 'ftp ising' connecteren we vanop huygens
+met ising. Tijdens deze verbinding kunnen we vanop huygens
+op ising mappen maken m.b.v. commando mkdir.
+
+-m state --state heeft enkele mogelijkheden die ons kunnen
+helpen:
+NEW -> wanneer een nieuwe connectie wordt gevraagd
+ESTABLISHED -> wanneer de connectie reeds is opgesteld en 
+geldig is
+RELATED -> een goed voorbeeld is ftp die een extra related
+connectie aanmaakt voor ftp-data.
+INVALID
+...
+
+14. Tracht alle regels die je hebt ingesteld in de twee 
+vorige punten 12 en 13 te combineren tot twee regels.
+-----------------------------------------------------------
+iptables -I INPUT -s 192.168.64.1 -p tcp -m multiport 
+--dport http,21,1024:65535 -j ACCEPT
+
+
+iptables -I OUTPUT -d 192.168.64.1 -p tcp -m multiport 
+--sport http,21,1024:65535 -m multiport 
+--dport http,1024:65535,1024:65535 -j ACCEPT
+
+Deze configuratie maakt gebruik van passive ftp.
+
+
+15. Vanuit je machine moet je in staat zijn om naar andere 
+computers te pingen. Denk even na over hoe je dit kan uit-
+testen. Zorg er voor dat je eigen computer niet reageert op
+ping-aanvragen van andere machines.
+-----------------------------------------------------------
+iptables -A OUTPUT -p ICMP -j ACCEPT
+iptables -A INPUT -p ICMP -m state --state ESTABLISHED,
+RELATED -j ACCEPT
+
+of 
+iptables -A OUTPUT -p ICMP -m state --state NEW -j ACCEPT
+iptables -A INPUT -p ICMP -m state --state ESTABLISHED,
+RELATED -j ACCEPT
+
+16. Extra's
+A: Probeer van op je eigen computer ook nog de webpagina's 
+van tiwi.be op te vragen.
+B: Probeer ook de webpagina's van intranet.tiwi.be op te 
+vragen.
+-----------------------------------------------------------
+Op de gateway wordt al het http verkeer doorgestuurd.
+
+Deze configuratie werd niet getest.
+A.
+iptables -I INPUT -s tiwi.be -j ACCEPT -p tcp 
+--source-port http
+iptables -I OUTPUT -d tiwi.be -j ACCEPT -p tcp 
+--destination-port http
+
+B.
+iptables -I INPUT -s intranet.tiwi.be -j ACCEPT -p tcp 
+--source-port https
+iptables -I OUTPUT -d intranet.tiwi.be -j ACCEPT -p tcp 
+--destination-port https

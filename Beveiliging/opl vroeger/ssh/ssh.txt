@@ -1,0 +1,451 @@
+Elias De Coninck & Tim Dheedene
+Groep 14 
+SSH
+==========================================================
+1. HOST BASED
+==========================================================
+client:
+-------
+als root: /etc/ssh/ssh_config aanpassen:
+	HostbasedAuthentication yes
+	EnableSSHKeysign yes
+
+genereer sleutel:
+ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key
+--> publieke sleutel in /etc/ssh/ssh_host_rsa_key.pub
+
+service aanzetten:
+service sshd start
+
+server:
+-------
+als tiwi1:
+echo ising.groep14.iii.hogent.be > $HOME/.shosts
+chmod go-w $HOME/.shosts   <-- zeker niet vergeten!!!!
+anderen en de groep mogen geen schrijfrechten hebben !
+
+sleutel importeren;
+ssh-keyscan-t rsa ising.groep14.iii.hogent.be 
+	> $HOME/.ssh/known_hosts
+
+als root:
+/etc/ssh/sshd_config bestand aanpassen:
+	HostbasedAuthentication yes
+	IgnoreRhosts no
+
+als root:	
+service starten:
+service sshd start
+
+
+test:
+als tiwi1 op client:
+	ssh tiwi@huygens.groep14.iii.hogent.be
+	--> kan inloggen --> succes
+als tiwi2 op client:
+	ssh tiwi2@huygens.groep14.iii.hogent.be
+	--> kan niet inloggen
+	
+Waarom werkt de serverinstelling niet voor root?
+uit veiligheid, anders kan de root van een ander 
+systeem gevaarlijke aanpassingen doen aan de 
+server, wat (meetsal) niet de bedoeling is.
+
+Waarom werkt hostbased authenticatie alleen als de lokale
+gebruiker dezelfde is als de remote gebruiker?
+uit veiligheid: anders	kan een gebruiker zich voor 
+iemand anders voordoen
+
+probleem: service wou niet starten
+oplossing: de FQDN naam zonder punt op het einde doen,
+(een punt op einde is nodig in DNS)
+
+
+2. public host keys
+==========================================================
+op client: /etc/ssh/ssh_config configureren:
+	StrictHostKeyChecking yes
+op server key genereren:
+	ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key
+op client: sleutel van server ophalen
+ssh-keyscan -t rsa huygens.groep14.iii.hogent.be
+			> $HOME/.ssh/known_hosts
+
+test:
+als tiwi1 op client:
+ssh tiwi1@huygens.groep14.iii.hogent.be --> succes
+	
+Waarom wordt de bevestiging van de gebruiker gevraagd 
+m.b.v. de RSA key fingerprint?
+Omdat het systeem deze nog niet kent.
+
+Waarom wordt de RSA fingerprint vermeld?
+--> door de RSA key fingerprint op het scherm weer te 
+geven, kan je deze zelf nog controleren of het de 
+correcte code is.
+
+De optie voorziet 3 parameters (ask/yes/no), hoe zou je 
+ze instellen?
+yes: niet automatisch toevoegen (veiligst) 
+no: nieuwe host keys worden automatisch toegevoegd 
+(handig indien veel nieuwe connecties gemaakt worden, 
+minder veilig) 
+ask: gebruiker moet toevoegen bevestigen 
+(gulden middenweg)	
+
+Wat moet er gebeuren als ze op yes staat?
+dan moet alles handmatig worden toegevoegd, maar dit is wel
+het veiligst
+
+	
+3. geen root mogelijk
+==========================================================
+niet als root op server:
+/etc/ssh/sshd_config aanpassen:
+	PermitRootLogin no 
+service herstarten:
+	service sshd restart
+
+test:
+als root op ising:
+ssh root@huygens.groep14.iii.hogent.be
+-> permission denied --> success
+
+enkel buren toelaten:
+als root op server: 
+AllowGroups, AllowUsers, DenyGroups, DenyUsers 
+in /etc/ssh/sshd_config
+
+bvb: we willen enkel gebruikers van ising toelaten
+als root op server:
+aan /etc/ssh/sshd_config toevoegen:
+	DenyUsers *
+	AllowUsers *@ising.groep14.iii.hogent.be
+-> service herstarten
+service sshd restart
+
+test: 
+op ising client als tiwi1:
+ssh tiwi1@huygens.groep14.iii.hogent.be
+--> succes
+
+op een ander toestel
+--> permission denied --> succes
+
+
+4. public key
+==========================================================
+in server /etc/ssh/sshd_config:
+	PublickeyAuthentication yes 
+dit is al standaard zo, dus men hoeft het bestand niet
+aan te passen
+(we hebben dit in het bestand toegevoegd, maar de service 
+kon niet meer worden gestart, dus hebben we dit eruit
+gelaten)
+
+in server als root:
+service sshd start
+
+in client ssh_config:
+	PubKeyAuthentication yes 
+
+op client als de gebruiker:
+ssh-keygen -t rsa -f $HOME/.ssh/linuxlookup_rsa
+deze omdracht maakt de key aan
+-> vraagt een passphrase, vul in indien gewenst
+-> maakt 2 bestanden in de .ssh map
+-> toont de locatie van de bestanden, de 'key fingerprint' 
+en de 'randomart image'
+
+op client, nog steeds als gebruiker:
+de server de public key bezorgen :
+(in $HOME/.ssh/autorized_keys)
+ssh-copy-id -i .ssh/linuxlookup_rsa.pub 
+				tiwi1@huygens.groep14.iii.hogent.be
+boodschap: 
+the authenticity of host cannot be established, continue?
+--> yes kiezen
+--> 'host added to list of known_hosts'
+
+inloggen vanop ising:
+ssh tiwi1@huygens.groep14.iii.hogent.be -> succes
+
+Toegang tot 1 machine beperken:
+in het $HOME/.ssh/authorized_keys bestand de beperking 
+voor de publieke sleutel plaatsen:
+from="ising.groep14.iii.hogent.be" AAA...
+
+test: inloggen van een andere machine: lukt niet met 
+dezelfde sleutel
+uitvoeren op ising.groep14.iii.hogent.be:
+ssh tiwi1@huygens.groep14.iii.hogent.be
+-> inloggen lukt --> succes
+
+
+test: inloggen:
+als gebruiker op client:
+ssh tiwi1@huygens.groep14.iii.hogent.be --> succes
+vraagt geen paswoord --> succes
+
+Waarom wordt er een passeerzin gevraagd?
+De passeerzin wordt gebruikt om de private sleutel te
+encrypteren.
+
+
+5. gebruikers toelaten of uitsluiten
+==========================================================
+met host bestanden:
+/etc/host.allow & /etc/host.deny worden gebruikt
+Eerst en vooral wordt dus de hosts.allow gechecked en dan 
+hosts.deny om te zien of je rechten hebt om ssh 
+op te roepen.
+Het systeem krijgt toegang tot de service als het ip adres 
+is geregistreerd in het hosts.allow bestand. 
+Het systeem krijgt geen toegang als het ip adres is 
+geregistreerd in het hosts.deny bestand.
+
+Als je wel toestemming hebt, dan worden de instellingen van 
+/etc/ssh/sshd_config gecontrolleerd
+
+concreet:
+op de server in het /etc/hosts.allow bestand:
+	sshd : ALL
+
+en het /etc/hosts.deny bestand:
+	sshd : 192.168.64.25
+	
+test: inloggen vanop 192.168.45.25
+ssh tiwi1@huygens.groep14.iii.hogent.be
+-> kan niet inloggen -> succes
+
+andere configuratie:
+op de server in het /etc/hosts.allow bestand:
+	sshd : 192.168.64.25
+en het /etc/hosts.deny bestand:
+	sshd : ALL
+	
+ssh tiwi1@huygens.groep14.iii.hogent.be
+-> kan inloggen ->succes
+	
+andere manier:
+als root op server: 
+AllowGroups, AllowUsers, DenyGroups, DenyUsers 
+in sshd_config
+
+vb: we willen tiwi1 blokkeren
+als root op server:
+aan sshd_config toevoegen:
+DenyUsers tiwi1@ising.groep14.iii.hogent.be
+-> service herstarten
+service sshd restart
+
+test: 
+commando op client als tiwi1:
+ssh tiwi1@huygens.groep14.iii.hogent.be
+-> vraagt het paswoord
+-> ingave correct paswoord: 'Permission denied'
+--> succes
+
+commando op client als tiwi2:
+ssh tiwi2@huygens.groep14.iii.hogent.be
+-> vraagt geen paswoord
+--> succes
+
+6. X11 forwarding
+==========================================================
+op server /etc/ssh/sshd_config bestand aanpassen:
+	X11Forwarding yes
+
+op client als tiwi1:
+	ssh -X tiwi1@huygens.groep14.iii.be
+gui applicatie starten:
+	wireshark & 
+(we nemen aan dat wireshark geinstalleerd is)
+resultaat-> het programma wordt opgestart van de server, en
+de user interface wordt doorgestuurd naar de client.
+--> success
+
+optie uitzetten en zelfde commando ingeven:
+resultaat: 'warning: cannot open display'
+
+7. poortforwarding
+==========================================================
+1: dit is local forwarding
+ssh -L 8888:naamhost:22 tiwi1@huygens.groep14.iii.hogent.be 
+toepassing: als je bijvoorbeeld een service op een toestel 
+op het werk wilt gebruiken , dan moet je maar 
+connecteren met de server
+
+2: dit is remote forwarding
+ssh -R 8888:naamhost:22 tiwi1@huygens.groep14.iii.hogent.be 
+toepassing: X
+
+
+8. remote root login
+==========================================================
+op server als root: /etc/ssh/sshd_config
+aanpassen of aanvullen:
+	DenyUsers *
+	AllowUsers root@*
+	PermitRootLogin yes
+
+commando: service sshd restart
+
+test:
+als root op client:
+	ssh root@huygens.groep14.iii.hogent.be
+	--> kan inloggen --> succes
+als tiwi1 op client:
+	ssh tiwi1@huygens.groep14.iii.hogent.be
+	--> kan niet inloggen (permission denied) --> succes
+als tiwi2 op client:
+	ssh tiwi2@huygens.groep14.iii.hogent.be
+	--> kan niet inloggen (permission denied) --> succes
+	
+9. SFTP
+==========================================================
+in de homedirectory van tiwi1 op de server een 
+testbestand aanmaken:
+
+als tiwi1 op de server
+echo "serverbestand" > serverFile
+
+in de homedirectory van tiwi1 op de client een
+testbestand aanmaken:
+als tiwi1 op de clent
+echo "clientbestand" > clientFile
+
+op client als gebruiker:
+sftp tiwi1@huygens.groep14.iii.hogent.be
+
+een nieuwe prompt komt tevoorschijn
+lijst van mogelijke commando's in deze prompt: 
+http://kb.iu.edu/data/akqg.html	
+
+gegevens copyen:
+als tiwi1 op de client:
+- cd instellen op client
+	lcd /home/tiwi1
+- cd instellen op server
+	cd /home/tiwi
+- controle:
+	zowel pwd als lpwd geven /home/tiwi1
+	pwd = print working directory op server
+	lpwd = zelfde, maar dan local
+	
+bestand van de server afhalen:
+	get serverFile (serverFile = naam gewenste bestand)
+-> serverfile wordt gekopieerd naar de 
+	/home/tiwi1 map op de client
+
+bestand op de server plaatsen:
+	put clientFile (clientFile = gewenste bestand)
+-> clientfile wordt gekopieerd naar de 
+	/home/tiwi1 map op de server
+
+test: bestanden aanwezig?
+op server als tiwi1:
+	cd (om naar de home te gaan)
+	ls -al --> clientFile aanwezig --> success
+	
+op client als tiwi1:
+	cd (om naar de home te gaan)
+	ls -al --> serverFile aanwezig --> success
+
+10. SCP
+==========================================================
+op de client als de testgebruiker: een testbestand aanmaken
+	echo "test van scp commando" > copyMe
+vervolgens:
+scp copyMe tiwi1@huygens.groep14.iii.hogent.be:/home/tiwi1
+
+controle op de server:
+navigeren naar de destination folder (/home/tiwi1)
+bestand is aanwezig --> success
+
+
+X-server
+==========================================================
+verander van runlevel naar 3 zonder de 
+computer te herstarten: init 3
+
+11. Maak in de home-directory van de root-gebruiker een 
+bestand aan met naam .xinitrc. 
+==========================================================
+opdrachten: 
+	cd
+	echo "" > .xinitrc
+
+12. Toon X-clients xclock en xterm bij het opstarten
+==========================================================
+plaats de volgende regels in het net aangemaakte bestand:
+	xclock -g 100x100-0+0 -bw 0 &
+	xterm -g 100x100+0+0 -bw 0
+geef vervolgens in de command line in: startx
+ 
+Is de volgorde van de X-clients belangrijk?
+De volgorde is belangrijk!
+Kun je de grootte van de vensters aanpassen?
+de grootte kan aangepast worden door de parameters, 
+bvb -g 100x100-0+0
+
+13. Pas nu het bestand .xinitrc aan zodat je beide 
+vensters, xclock en xterm, kunt verslepen en eventueel 
+kunt herschalen. Hoe moet je nu de X-server stoppen?
+==========================================================
+inhoud van .xinitrc bestand:
+	xclock -g 100x100-0+0 -bw 0 &
+	xterm -g 100x100+0+0 -bw 0 &
+	twm
+X-server stoppen:  in open stuk van bureaublad met 
+linkermuisklik blijven duwen en dan exit selecteren
+
+	
+14. Door welk proces/programma wordt de X-server gestart?
+==========================================================
+Het wordt gestart door xinit.
+
+15. Met welke parameters werd de X-server opgestart?
+==========================================================
+Wanneer geen specifiek client programma is voorzien, 
+zoekt xinit het .xinitrc bestand in de home directory.  
+Als dit bestand niet bestaat, gebruikt xinit het volgende 
+als default:
+xterm -geometry +1+1 -n login -display :0
+
+16. Welke parameter zal naar alle waarschijnlijkheid 
+==========================================================
+X-clients verhinderen om met jouw X-server te connecteren?
+
+Hoe kun je ervoor zorgen dat remote X-clients een verbinding 
+kunnen maken met jouw X-server. 
+XDMCP enablen
+
+
+17. Wat doet het commando xhost. Voeg nu de computer van je 
+buur toe als vertrouwde host.
+==========================================================
+xhost: xhost - server access control program for X. 
+Het zorgt voor de toegelaten x-clients. 
+een pc toevoegen als client: 
+xhost huygens.groep14.iii.hogent.be
+xhost controleren welke pc's toegang hebben
+
+18. Stel de DISPLAY-variabele zo in dat bij het het 
+uitvoeren van xterm het venster wordt getoond op het 
+display van je buur en niet op je eigen display.
+==========================================================
+DISPLAY=huygens.groep14.iii.hogent.be:0.0
+daarna xterm oproepen
+
+19. Log via ssh in op het toestel van je buur en open
+een xterm-venster op jouw display.
+==========================================================
+export display=$DISPLAY; 
+ssh tiwi1@huygens.groep14.iii.hogent.be
+
+20. Voeg aan het commando ssh een parameter toe zodat je 
+op de remote computer de DISPLAY-omgevingsvariabele niet 
+meer hoeft in te stellen.
+==========================================================
+ssh -X huygens.groep14.iii.hogent.be

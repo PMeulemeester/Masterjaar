@@ -1,0 +1,107 @@
+Elias De Coninck
+Tim Dheedene
+vpn
+
+voor dit labo werken we samen met groep 13.
+
+1==========================================================
+http://lartc.org/howto/lartc.ipsec.html
+
+alles op ising voor deze vraag.
+
+sleutels genereren mbv commando:
+/TODO: correct commando...
+
+vm: bestand aanmaken met daarin:
+spdflush;
+flush;
+vervolg bestand = configuratie ipsec
+
+//TODO: configuratie ipsec
+-> dezelfde inhoud als van groep13, maar
+enkel de in/out veranderen !!!
+
+
+dan commando:
+setkey -f configuratiebestandlocatie
+
+testen in wireshark: bij de ping berichten staat de ESP aanduiding
+-> test geslaagd
+
+
+probleem: esp in tunnel en ah in transport was blijkbaar niet mogelijk
+oplossing: alles in tunnel doen (ah en esp)
+
+
+waarom zijn bepaalde paketten niet geëncrypteerd?
+enkel de paketten van delen van de tunnel worden geëncrypteerd, 
+paketten van andere hosts die geen deel uitmaken van de tunnel worden
+niet geëncrypteerd.
+
+enkel bij het pingen van het subnet is er terug encryptie.
+
+2.
+een bestand aanmaken met als inhoud:
+flush;
+spdflush;
+
+vervolgens flushen:
+ setkey -f bestandsnaam
+
+vervolgens racoon configureren:
+beginnen van http://www.linux-tutorial.info/modules.php?name=Howto&pagename=Linux_IPv6-HOWTO/x2424.html
+
+in /etc/racoon.conf:
+//TODO: configuratie hier
+
+
+in oorspronkelijk IPsec config bestand: eerste 4 configlijnen in commentaar
+en terug setkey -f bestand uitvoeren.
+
+
+tegen gekomen fout:
+bij pingen geeft racoon de foutboodschap: failed to get SAinfo
+oplossing: subnetwerk notatie aanpassen in racoon.conf, bvb:
+
+bij sainfo stukken: sainfo address 19.168.63.0/24 any address 19.168.64.0/24 any
+
++ anonymous blok invoegen
+
+
+gebruikte hulpmiddelen:
+setkey -D
+setkey -PD
+
+
+
+testje: de conrete regels uit racoon.conf in commentaar-> pnigen lukt niet meer correct
+-> policy's can not be found
+
+
+3.
+nieuw bestand vpnsetkeyhost
+spdflush;
+flush;
+
+#esp toevoegen
+add 192.168.63.1 192.168.64.1 esp 0x501 -E 3des-cbc "key";
+add 192.168.64.1 192.168.63.1 esp 0x501 -E 3des-cbc "key";
+
+#policies
+spdadd 192.168.63.1 192.168.64.1 any -P in esp/transport//require;
+spdadd 192.168.64.1 192.168.63.1 any -P out esp/transport//require;
+
+setkey -f vpnsetkeyhost
+ping van host1 naar host2
+wireshark op ising eth1 moet esp packetten hebben
+
+vragen:
+esp om het intranet verkeer ook te beveiligen. 
+transport mode voor end to end encryptie (huidig ip zou anders het zelfde
+zijn als te vervangen ip)
+
+4.
+racoon.conf aanpassen
+-->
+
+racoon -F

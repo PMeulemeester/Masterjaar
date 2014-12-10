@@ -1,0 +1,233 @@
+Elias De Coninck & Tim Dheedene
+groep 14
+
+interfaces instellen
+====================
+De interfaces moeten correct ingesteld worden,
+om een subnetwerk te vormen.
+
+commando's op Ising: 
+ifconfig eth1 192.168.64.254 netmask 255.255.255.0 up
+ifconfig eth0 192.168.16.80 netmask 255.255.255.0 up
+
+commando's op Huygens: 
+ifconfig eth0 192.168.64.1 netmask 255.255.255.0 up
+
+controle
+--------
+naar elkaar pingen --> succes
+commando: ping 192.168.64.254 (op Huygens)
+		  ping 192.168.64.1 (op Ising)
+
+backup /etc
+===========
+uit veiligheid moet er een backup genomen worden
+van de /etc folder/.
+commando: cp -br /etc /etc_backup
+
+PC(Ising) als router instellen
+=====================
+In onze opstelling wordt Ising de router, zodat onze dns-
+server de root dns-server kan contacteren indien hij
+iets niet weet.
+
+commando's op Ising: 
+echo 1 > /proc/sys/net/ipv4/ip_forward
+ip route change 0/0 via 192.168.16.8
+	
+Berichten van huygens (dns server) moeten via ising
+de root dns server bereiken:
+commando op huygens: 
+ip route change 0/0 via 192.168.64.254
+	
+controle router
+---------------
+beide pc's pingen naar 192.168.16.8 --> succes
+commando: ping 192.168.16.8 		
+	
+DNS-server instellen & opstarten
+================================	
+In onze opstelling wordt Huygens de DNS-server.	
+/etc/resolv.conf aanpassen:
+	domain groep14.iii.hogent.be
+	nameserver 192.168.64.1
+
+Alle communicatie van Huygens met de 'buitenwereld' via 
+Ising laten gebeuren.
+commando op Huygens: 
+ip route change 0/0 via 192.168.64.254
+Dit is nodig om de root DNS-server te bereiken.
+
+DNS-server instellen
+--------------------
+Op Huygens moeten de nodige bestanden om de DNS-server te 
+laten werken, geconfigureerd worden:
+	- /etc/named.conf aanpassen om te weten voor welke 
+	  domeinen de server verantwoordelijk is
+	- /var/named/groep14, /var/named/64.186.192 aanmaken
+	  voor de domeinen
+	- /var/named/named.ca aanpassen zodat de root server 
+	 kan bereikt worden om info over andere DNS-domeinen
+	   te verkrijgen
+	- /etc/resolv.conf aanpassen met: 
+		* domain groep14.iii.hogent.be
+		* nameserver 127.0.0.1
+
+Ising moet weten waar hij zijn dns-vragen moet richten:
+--> /etc/resolv.conf aanpassen:		
+	domain groep14.iii.hogent.be
+	nameserver 192.168.64.1
+
+DNS-Server starten
+------------------
+commando: (op Huygens) service named start
+
+problemen bij de DNS-server
+----------------------------
+- Alle aanvragen werden doorgestuurd naar de gateway, 
+ook dns verzoeken 
+	oplossing: fout in zone configuratie
+- DNS-service op de voorgrond starten, de configuratie-
+  bestanden mochten niet aangemaakt
+  worden door de root gebruiker
+	oplossing: 
+		- nieuwe gebruiker aanmaken: groep14
+			commando: useradd groep14
+		- de nieuwe gebruiker eigenaar maken van de 
+		   configuratiebestanden
+			commando's: 
+			  chown groep14:named /var/named/groep14
+		      chown groep14:named /var/named/64.168.192
+						
+DNS werking controleren
+-----------------------
+Hierbij controleren we met behulp van enkele commando's
+of de DNS server goed werkt en correct is ingesteld.
+
+- named.conf bestand controleren op fouten, 
+	commando: named-checkconf --> succes
+- zonebestanden controleren op fouten, 
+	commando: 
+named-checkzone groep14.iii.hogent.be /var/named/groep14
+named-checkzone 
+    64.168.192.in-addr.arpa /var/named/64.168.192
+
+- systemen naar elkaar pingen met namen	--> succes
+	commando's: 
+	  ping huygens.groep14.iii.hogent.be. (op Ising)
+	  ping huygens (op Ising) --> succes
+	  ping ising.groep14.iii.hogent.be. (op Huygens)
+	  ping ising (op Huygens)
+- nslookup met naam --> succes
+	commando's: 
+		nslookup huygens.groep14.iii.hogent.be.
+		nslookup ising.groep14.iii.hogent.be. 
+- nslookup met ip-adres (reverse dns) --> succes
+	commando's:
+		nslookup 192.168.64.1 
+		nslookup 192.168.64.254 
+- nslookup & dig van google --> succes
+commando: nslookup www.google.com
+- nslookup van andere pc's in andere subnets --> succes
+commando: nslookup curie.groep13.iii.hogent.be
+
+verslag & problemen
+===================
+In het begin van de les verliep alles vlekkeloos. Het 
+instellen van het subnet en de routes was dan ook heel
+snel geklaard. Pingen naar elkaar en naar de buiten 
+wereld was dan ook direct mogelijk. 
+
+Tijdens het instellen van de DNS server hebben we ons 
+laten vangen aan de standaardinstellingen van 
+named.conf. In de standaard configuratie staan een aantal
+opties en includes waar we hadden overgekeken. De 
+named-checkzone en named-checkconf commando’s slaagden 
+allebei en toch kon zelfs de DNS Server geen hostnamen 
+vertalen.
+
+We hebben getracht deze fout op te lossen met behulp van 
+Wireshark, maar hier werden we niet veel mee 
+geholpen. De DNS aanvraag kwam door, maar het antwoord 
+was dat de poort niet bereikbaar was. 
+
+Na enige tijd hebben we dan toch besloten om alle 
+standaardopties er uit te halen. Toen was het reeds 
+mogelijk om onze eigen namen in het subnet te vertalen 
+naar ip-adressen, maar aan de hand van nslookup en dig 
+wisten we dat er naar buiten nog iets fout liep.
+
+Dit probleem kwam door de nalatigheid van onszelf. 
+We hadden de standaard zone include bestanden over het 
+hoofd gezien, waardoor andere zones ook aan het config 
+bestand werden toegevoegd. Na dat deze verwijderd werden 
+waren alle problemen opgelost.
+
+De instellingen
+==============
+named.conf
+-----------
+Dit bestand bevat de instellingen van de DNS-server
+options {
+		directory 	"/var/named";
+		forwarders{ 192.168.16.8; };
+
+};
+
+zone "groep14.iii.hogent.be"{
+	type master;
+	file "groep14";
+
+	
+};
+
+zone "64.168.192.in-addr.arpa"{
+	file "64.168.192";
+	type master;
+
+};
+
+64.168.192 (zonebestand voor reverse dns)
+-----------------------------------------
+@ IN SOA huygens.groep14.iii.hogent.be. 
+							timdheedene.hotmail.com(
+	2011101303
+86400
+3600
+604800
+60
+)
+
+@ NS huygens.groep14.iii.hogent.be.
+254 PTR ising.groep14.iii.hogent.be.
+1 PTR huygens.groep14.iii.hogent.be.
+
+groep14 (zonebestand)
+---------------------
+@ IN SOA huygens.groep14.iii.hogent.be. 
+                           timdheedene.hotmail.com(
+	2011101304
+86400
+3600
+604800
+60
+)
+@ NS huygens.groep14.iii.hogent.be.
+huygens A 192.168.64.1 
+ising  A 192.168.64.254
+
+named.ca
+--------
+Dit bestand is nodig om door te verwijzen naar de root
+dns-server.
+
+.	3600000 IN NS rootdns.
+rootdns. IN A 192.168.16.8
+
+resolv.conf
+-----------
+; generated by /sbin/dhclient-script
+domain groep14.iii.hogent.be
+nameserver 192.168.64.1
+; nameserver 192.168.16.16
+; nameserver 192.168.16.13

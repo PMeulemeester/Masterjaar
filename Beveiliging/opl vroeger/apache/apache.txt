@@ -1,0 +1,104 @@
+Elias De Coninck & Tim Dheedene
+groep14
+
+opgave: apache
+
+Omdat we dit thuis verder hebben afgewerkt
+kunnen sommige commando's anders zijn (ubuntu)
+ook hebben we zo goed mogelijk de situaties te
+herschetsen door de dns namen in hosts file te
+plaatsen.
+
+1. vooraf
+commando's:
+	useradd tiwi1
+	passwd tiwi1	(e=mc**2)
+	useradd tiwi2	(e=mc**2)
+	mkdir  /usr/local/WWW
+	mkdir /usr/local/WWW2
+	mkdir /usr/local/cgi_scripts
+	chown -R apache:apache /usr/local/WWW
+	chown -R apache:apache /usr/local/WWW2
+	chown -R apache:apache /usr/local/cgi_scripts
+	mkdir ~/backup
+	cp -rbt ~/backup /etc/httpd/conf/httpd.conf
+	cp -rbt ~/backup  /etc/httpd/conf.d/*.conf
+
+2. Directories
+httpd.conf aanpassen of in apparte files
+plaatsen en de directory includen.
+
+<VirtualHost *:8000>
+	DocumentRoot /usr/local/WWW
+	<Directory /usr/local/WWW>
+	allow from all
+	Options Indexes 
+	</Directory>
+	ServerName localhost
+</VirtualHost>
+<VirtualHost *:80>
+	DocumentRoot /usr/local/WWW2
+	ServerName ising
+</VirtualHost>
+
+3. Scripts
+toevoegen aan virtualhost -> localhost
+ScriptAlias /bin/ /usr/local/cgi_scripts/
+<Directory /home/local/WWW/bin> //FOUT
+Options ExecCGI
+</Directory>
+
+4. Intranet
+in virtualhost ising:
+<Directory /usr/local/WWW2/intranet>
+order deny,allow
+deny from all
+allow from groep14.hogent.be
+allow from groep13.hogent.be
+</Directory>
+
+5.
+htpasswd -c /usr/local/passwords tiwi1  (password  = e=mc**2)
+
+in virtualhost ising:
+<Directory /usr/local/WWW2/secure>
+AuthType Basic
+AuthName "local secure"
+AuthUserFile /usr/local/passwords
+require user tiwi1
+
+6.
+in virtualhost tag ising:
+UserDir website
+
+7.
+httpd.conf global: (in Directory tag van virtualhost override op false)
+<Files ~ "afgeschermd\.html">
+Order allow,deny
+Deny from all
+</Files>
+
+8.
+RedirectMatch 301 ^/studeren/(.*))$ http://huygens/studeren/$1
+
+9.	
+RewriteEngine On
+RewriteOptions Inherit
+
+RewriteCond  %{TIME_HOUR} >11
+RewriteCond  %{TIME_HOUR} <12
+RewriteRule ^/intranet/(.*)$ https://intranet.tiwi.be/$1
+
+10.
+voeg de volgende toe aan het vraag 9
+RewriteCond  %{REMOTE_PORT} =2007
+ReWriteCond %{SERVER_NAME} =ising.iii.hogent.be
+
+11.
+RewriteCond  %{HTTP_USER_AGENT}  ^.*Firefox
+ReWriteCond %{SERVER_NAME} =ising.iii.hogent.be
+RewriteRule ^/index.html$ /firefox.html
+
+RewriteCond  %{HTTP_USER_AGENT}  ^.*Chrome
+ReWriteCond %{SERVER_NAME} =ising.iii.hogent.be
+RewriteRule ^/index.html$ /chrome.html
