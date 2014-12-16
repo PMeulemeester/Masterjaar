@@ -1,0 +1,61 @@
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<!DOCTYPE html>
+<html>
+    <head>
+        <title></title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <script src='http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js'></script>
+        <script src='http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js'></script>
+        <script src='http://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.2/backbone-min.js'></script>
+        <script src='RestClient.js'></script>
+    </head>
+    <body>
+        <div id='header'></div>
+
+        <div id='sidebar'></div>
+
+        <div id='content'></div>
+
+
+        <!-- Templates -->
+        <script type='text/template' id='tpl-create'>
+            <!--
+            Put your controls to create new entity here.
+
+            Class 'new' is used to listen on events in JS code.
+            -->
+            <button class='new'>Create</button>
+        </script>
+
+        <script type='text/template' id='tpl-newsitem-list-item'>
+            <!-- modify output display name for item here or change displayName in the JS model code -->
+            <%= displayName %>
+        </script>
+
+        <script type='text/template' id='tpl-newsitem-details'>
+            <div>
+            <label>Name:</label>
+            <input type='text' id='author' name='author' value='<%= author %>'/>
+            <!--
+            Put your editing controls for model
+            attribute data (text fields, ...) here
+            <label>id:</label>
+            <input type='text' id='id' name='id' value='<%= id %>'/><label>title:</label>
+            <input type='text' id='title' name='title' value='<%= title %>'/><label>message:</label>
+            <input type='text' id='message' name='message' value='<%= message %>'/>-->
+            <!--
+            Put your controls to create new entity here.
+            Classes 'save' and 'delete' are used to listen on events in JS code.
+            -->
+            <button  class='save'>Save</button>
+            <button  class='delete'>Delete</button>
+            </div>
+        </script>
+
+
+    </body>
+</html>
